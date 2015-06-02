@@ -10,6 +10,7 @@ class sspmod_aselect_Auth_Source_aselect extends SimpleSAML_Auth_Source {
 	private $server_id;
 	private $server_url;
 	private $private_key;
+	private $add_default_attributes;
 
 	/**
 	 * Constructor for this authentication source.
@@ -37,6 +38,8 @@ class sspmod_aselect_Auth_Source_aselect extends SimpleSAML_Auth_Source {
 		$this->server_url = $cfg->getString('serverurl', null);
 		if($this->server_url === null)
 			$this->server_url = $cfg->getString('server_url');
+
+		$this->add_default_attributes = $cfg->getBoolean('add_default_attributes', null);
 	}
 
 	/**
@@ -46,13 +49,14 @@ class sspmod_aselect_Auth_Source_aselect extends SimpleSAML_Auth_Source {
 	 */
 	public function authenticate(&$state) {
 		$state['aselect::authid'] = $this->authId;
+		$state['aselect::add_default_attributes'] = $this->add_default_attributes;
 		$id = SimpleSAML_Auth_State::saveState($state, 'aselect:login', true);
 
 		try {
 			$app_url = SimpleSAML_Module::getModuleURL('aselect/credentials.php', array('ssp_state' => $id));
 			$as_url = $this->request_authentication($app_url);
 
-			SimpleSAML_Utilities::redirectTrustedURL($as_url);
+			\SimpleSAML\Utils\HTTP::redirectTrustedURL($as_url);
 		} catch(Exception $e) {
 			// attach the exception to the state
 			SimpleSAML_Auth_State::throwException($state, $e);
@@ -125,7 +129,7 @@ class sspmod_aselect_Auth_Source_aselect extends SimpleSAML_Auth_Source {
 					$signable .= $parameters[$p];
 			$parameters['signature'] = $this->base64_signature($signable);
 		}
-		return SimpleSAML_Utilities::addURLparameter($this->server_url, $parameters);
+		return \SimpleSAML\Utils\HTTP::addURLParameters($this->server_url, $parameters);
 	}
 
 	/**
@@ -177,7 +181,7 @@ class sspmod_aselect_Auth_Source_aselect extends SimpleSAML_Auth_Source {
 		$as_url = $res['as_url'];
 		unset($res['as_url']);
 
-		return SimpleSAML_Utilities::addURLparameter($as_url, $res);
+		return \SimpleSAML\Utils\HTTP::addURLParameters($as_url, $res);
 	}
 
 	/**

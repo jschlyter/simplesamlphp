@@ -107,20 +107,6 @@ class SimpleSAML_Configuration {
 			$config = array();
 		}
 
-		if (array_key_exists('override.host', $config)) {
-			$host = $_SERVER['HTTP_HOST'];
-			if (array_key_exists($host, $config['override.host'])) {
-				$ofs = $config['override.host'][$host];
-				foreach (SimpleSAML_Utilities::arrayize($ofs) AS $of) {
-					$overrideFile = dirname($filename) . '/' . $of;
-					if (!file_exists($overrideFile)) {
-						throw new Exception('Config file [' . $filename . '] requests override for host ' . $host . ' but file does not exists [' . $of . ']');
-					}
-					require($overrideFile);
-				}
-			}
-		}
-
 		$cfg = new SimpleSAML_Configuration($config, $filename);
 		$cfg->filename = $filename;
 
@@ -346,7 +332,7 @@ class SimpleSAML_Configuration {
 		
 		if (preg_match('/^\*(.*)$/D', $baseURL, $matches)) {
 			/* deprecated behaviour, will be removed in the future */
-			return SimpleSAML_Utilities::getFirstPathElement(false) . $matches[1];
+			return \SimpleSAML\Utils\HTTP::getFirstPathElement(false) . $matches[1];
 		}
 
 		if (preg_match('#^https?://[^/]*/(.*)$#', $baseURL, $matches)) {
@@ -1020,7 +1006,7 @@ class SimpleSAML_Configuration {
 
 		$endpoints = $this->getEndpoints($endpointType);
 
-		$defaultEndpoint = SimpleSAML_Utilities::getDefaultEndpoint($endpoints, $bindings);
+		$defaultEndpoint = \SimpleSAML\Utils\Config\Metadata::getDefaultEndpoint($endpoints, $bindings);
 		if ($defaultEndpoint !== NULL) {
 			return $defaultEndpoint;
 		}
@@ -1118,7 +1104,7 @@ class SimpleSAML_Configuration {
 			);
 		} elseif ($this->hasValue($prefix . 'certificate')) {
 			$file = $this->getString($prefix . 'certificate');
-			$file = SimpleSAML_Utilities::resolveCert($file);
+			$file = \SimpleSAML\Utils\Config::getCertPath($file);
 			$data = @file_get_contents($file);
 
 			if ($data === FALSE) {
